@@ -12,18 +12,25 @@ data class SkillCatalog(
     val unknownTrees: Set<String>,
 ) {
     companion object {
-        /** Ветки в порядке проверки: имя ветки в справочнике и её дерево. */
+        private const val AWAKENING_TREE = "awakening"
+
+        /**
+         * Деревья в порядке проверки: имя и дерево. В дереве наследия bdolytics лежат и основные навыки,
+         * поэтому стойку навыка оно не определяет — только дерево пробуждения.
+         */
         private val TREES = listOf<Pair<String, (ClassTrees) -> List<List<ClassTrees.Node?>>>>(
             "succession" to { it.successionTree },
-            "awakening" to { it.awakeningTree },
+            AWAKENING_TREE to { it.awakeningTree },
         )
 
         /**
          * Собирает справочник из деревьев [english] и [russian]: каждому `SkillNo` — классы, у которых он есть,
-         * ветка, названия и иконка. Нет русского названия — берётся английское.
+         * стойка, последний ли это ранг, названия и иконка. Нет русского названия — берётся английское.
          * Берутся только навыки с перезарядкой: их ставят в слоты, пассивные там не встречаются.
          */
         fun build(english: SkillTrees, russian: SkillTrees): SkillCatalog {
+            val superseded = supersededSkills(english)
+            val succession = successionSkills(english)
             val owners = sortedMapOf<Int, Owner>()
             val unknownTrees = sortedSetOf<String>()
             for ((treeNumber, classTrees) in english.trees) {
@@ -39,7 +46,12 @@ data class SkillCatalog(
                 val russianName = russian.skills[id.toString()]?.let { cleanSkillName(it.name) }
                 id to CatalogEntry(
                     classes = owner.classes.sorted(),
-                    tree = owner.tree,
+                    stance = when {
+                        owner.tree == AWAKENING_TREE -> Stance.AWAKENING
+                        id in succession -> Stance.SUCCESSION
+                        else -> Stance.BOTH
+                    },
+                    max = id !in superseded,
                     en = englishName,
                     ru = russianName?.takeIf { it.isNotEmpty() } ?: englishName,
                     icon = info.icon,
@@ -49,7 +61,7 @@ data class SkillCatalog(
         }
     }
 
-    /** Чей навык: ветка, в которой он встретился первым, и все классы с ним. */
+    /** Чей навык: дерево, в котором он встретился первым, и все классы с ним. */
     private class Owner(val tree: String) {
         val classes = mutableSetOf<String>()
     }

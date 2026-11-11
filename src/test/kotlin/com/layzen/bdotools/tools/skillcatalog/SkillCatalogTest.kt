@@ -7,18 +7,27 @@ class SkillCatalogTest {
 
     private fun row(vararg skills: Int) = listOf(ClassTrees.Node(skills.toList()), ClassTrees.Node(null), null)
 
+    private fun skill(name: String, cooldown: Long = 1000, vararg required: Pair<String, String>) =
+        SkillInfo(name, "/$name.webp", cooldown, required.map { (id, requiredName) -> SkillInfo.Required(id, requiredName) })
+
     private val english = SkillTrees(
         trees = mapOf(
-            "19" to ClassTrees(successionTree = listOf(row(5338, 1, 800)), awakeningTree = listOf(row(700))),
+            "19" to ClassTrees(
+                successionTree = listOf(row(5000, 5001), row(5100), row(5338), row(1), row(800)),
+                awakeningTree = listOf(row(700)),
+            ),
             "23" to ClassTrees(successionTree = listOf(row(1))),
             "99" to ClassTrees(successionTree = listOf(row(42))),
         ),
         skills = mapOf(
-            "5338" to SkillInfo("<span style=\"color: #eb9261\">Prime: Knee Hammer III</span>", "/a.webp", 5000),
-            "1" to SkillInfo("Black Spirit's Rage", "/b.webp", 1000),
-            "700" to SkillInfo("Wolf Fang", "/c.webp", 8000),
-            "42" to SkillInfo("New Class Skill", "/d.webp", 3000),
-            "800" to SkillInfo("Fist Training", "/e.webp"),
+            "5000" to skill("Knee Hammer I"),
+            "5001" to skill("Knee Hammer II", 1000, "5000" to "Knee Hammer I"),
+            "5100" to skill("Absolute: Knee Hammer", 1000, "5001" to "Knee Hammer II"),
+            "5338" to skill("<span style=\"color: #eb9261\">Prime: Knee Hammer III</span>", 5000, "9" to "<span>Succession: Striker's Vigor</span>"),
+            "1" to skill("Black Spirit's Rage"),
+            "700" to skill("Wolf Fang", 8000),
+            "42" to skill("New Class Skill"),
+            "800" to skill("Fist Training", cooldown = 0),
         ),
     )
     private val russian = SkillTrees(
@@ -26,21 +35,35 @@ class SkillCatalogTest {
         skills = mapOf("5338" to SkillInfo("<span style=\"color: #eb9261\">Мощь: Коленный молот III</span>")),
     )
 
-    @Test
-    fun collectsClassesTreeAndNamesOfSkillsWithCooldown() {
-        val catalog = SkillCatalog.build(english, russian)
+    private val catalog = SkillCatalog.build(english, russian)
 
-        assertEquals(listOf(1, 42, 700, 5338), catalog.entries.keys.toList()) // 800 — пассивный, без перезарядки
+    @Test
+    fun collectsClassesNamesAndSkipsPassives() {
+        assertEquals(listOf(1, 42, 700, 5000, 5001, 5100, 5338), catalog.entries.keys.toList()) // 800 — без перезарядки
         assertEquals(
-            CatalogEntry(listOf("striker"), "succession", "Prime: Knee Hammer III", "Мощь: Коленный молот III", "/a.webp"),
+            CatalogEntry(listOf("striker"), Stance.SUCCESSION, true, "Prime: Knee Hammer III", "Мощь: Коленный молот III", "/<span style=\"color: #eb9261\">Prime: Knee Hammer III</span>.webp"),
             catalog.entries.getValue(5338),
         )
-        assertEquals("awakening", catalog.entries.getValue(700).tree)
+    }
+
+    @Test
+    fun maxRankIsLastRankWithoutAbsolute() {
+        assertEquals(false, catalog.entries.getValue(5000).max) // есть ранг выше
+        assertEquals(false, catalog.entries.getValue(5001).max) // есть «Absolute:»
+        assertEquals(true, catalog.entries.getValue(5100).max)
+        assertEquals(true, catalog.entries.getValue(1).max)
+    }
+
+    @Test
+    fun stanceComesFromAwakeningTreeAndSuccessionPassive() {
+        assertEquals(Stance.AWAKENING, catalog.entries.getValue(700).stance)
+        assertEquals(Stance.SUCCESSION, catalog.entries.getValue(5338).stance)
+        assertEquals(Stance.BOTH, catalog.entries.getValue(5100).stance)
     }
 
     @Test
     fun sharedSkillListsEveryClassAndFallsBackToEnglishName() {
-        val shared = SkillCatalog.build(english, russian).entries.getValue(1)
+        val shared = catalog.entries.getValue(1)
 
         assertEquals(listOf("fury", "striker"), shared.classes)
         assertEquals("Black Spirit's Rage", shared.ru)
@@ -48,28 +71,28 @@ class SkillCatalogTest {
 
     @Test
     fun keepsUnknownClassUnderTemporaryKeyAndReportsIt() {
-        val catalog = SkillCatalog.build(english, russian)
-
         assertEquals(setOf("99"), catalog.unknownTrees)
         assertEquals(listOf("class-99"), catalog.entries.getValue(42).classes)
     }
 
     @Test
-    fun mergeKeepsRemovedSkillsAndTakesFreshData() {
-        val old = CatalogEntry(listOf("striker"), "succession", "Old", "Старое", "/o.webp")
-        val renamed = CatalogEntry(listOf("striker"), "succession", "New", "Новое", "/n.webp")
+    fun mergeKeepsRemovedSkillsButNoLongerOffersThem() {
+        val old = CatalogEntry(listOf("striker"), Stance.BOTH, true, "Old", "Старое", "/o.webp")
+        val renamed = CatalogEntry(listOf("striker"), Stance.BOTH, true, "New", "Новое", "/n.webp")
 
         val merged = mergeCatalogs(previous = mapOf(1 to old, 2 to old), fresh = mapOf(2 to renamed, 3 to renamed))
 
-        assertEquals(mapOf(1 to old, 2 to renamed, 3 to renamed), merged)
+        assertEquals(mapOf(1 to old.copy(max = false), 2 to renamed, 3 to renamed), merged)
         assertEquals(listOf(1, 2, 3), merged.keys.toList())
     }
 
     @Test
-    fun readsWrittenCatalogBack() {
-        val entries = mapOf(7 to CatalogEntry(listOf("warrior"), "awakening", "A", "Б", "/i.webp"))
+    fun readsWrittenCatalogBackAndOldFormat() {
+        val entries = mapOf(7 to CatalogEntry(listOf("warrior"), Stance.AWAKENING, true, "A", "Б", "/i.webp"))
 
         assertEquals(entries, parseCatalog(catalogJson(entries)))
+        val old = """{"7":{"classes":["warrior"],"tree":"succession","en":"A","ru":"Б","icon":"/i.webp"}}"""
+        assertEquals(CatalogEntry(listOf("warrior"), Stance.BOTH, false, "A", "Б", "/i.webp"), parseCatalog(old).getValue(7))
     }
 
     @Test
@@ -87,11 +110,19 @@ class SkillCatalogTest {
     }
 
     @Test
-    fun writesOneEntryPerLine() {
-        val json = catalogJson(mapOf(5 to CatalogEntry(listOf("warrior"), "succession", "A", "Б", "/i.webp")))
+    fun writesOneEntryPerLineWithoutDefaults() {
+        val json = catalogJson(
+            mapOf(
+                5 to CatalogEntry(listOf("warrior"), Stance.BOTH, false, "A", "Б", "/i.webp"),
+                6 to CatalogEntry(listOf("warrior"), Stance.SUCCESSION, true, "C", "Д", "/j.webp"),
+            ),
+        )
 
         assertEquals(
-            "{\n\"5\":{\"classes\":[\"warrior\"],\"tree\":\"succession\",\"en\":\"A\",\"ru\":\"Б\",\"icon\":\"/i.webp\"}\n}\n",
+            "{\n" +
+                "\"5\":{\"classes\":[\"warrior\"],\"en\":\"A\",\"ru\":\"Б\",\"icon\":\"/i.webp\"},\n" +
+                "\"6\":{\"classes\":[\"warrior\"],\"stance\":\"succession\",\"max\":true,\"en\":\"C\",\"ru\":\"Д\",\"icon\":\"/j.webp\"}\n" +
+                "}\n",
             json,
         )
     }

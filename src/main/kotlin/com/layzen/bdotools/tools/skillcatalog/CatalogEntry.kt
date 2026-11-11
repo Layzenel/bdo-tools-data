@@ -7,7 +7,10 @@ import kotlinx.serialization.Serializable
  *
  * @property classes ключи классов, у которых есть этот навык (`CharacterClass.key`). Бывает несколько:
  *   общие навыки пар классов (Ниндзя и Куноичи, Волшебник и Волшебница…) и навыки всех классов
- * @property tree ветка: `succession` — наследие (и основные навыки), `awakening` — пробуждение
+ * @property stance стойка, в которой навык можно использовать: `succession` — только наследие («Prime:»),
+ *   `awakening` — только пробуждение, `both` — обе (основные навыки, «Absolute:», «Flow:»)
+ * @property max последний ранг навыка: нет ни следующего ранга, ни его «Absolute:». Только такие навыки
+ *   предлагаются при выборе; навыки, пропавшие из bdolytics, — `false`
  * @property en название на английском
  * @property ru название на русском
  * @property icon путь к иконке; копия лежит на Pages: `https://layzenel.github.io/bdo-tools-data` + путь
@@ -16,7 +19,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class CatalogEntry(
     val classes: List<String>,
-    val tree: String,
+    val stance: String = Stance.BOTH,
+    val max: Boolean = false,
     val en: String,
     val ru: String,
     val icon: String,
