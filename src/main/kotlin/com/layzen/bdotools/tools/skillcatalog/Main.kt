@@ -36,14 +36,17 @@ fun main(args: Array<String>) {
     // Подробности — только последних рангов: их ставят в слоты и предлагают при выборе; так втрое меньше запросов
     val maxRanks = catalog.entries.filterValues { it.max }.keys
     println("Записано подробностей: ${details.mirror(maxRanks, refreshDetails)}")
-    val withPrime = absolutesWithPrime(catalog.entries, details.englishDescriptions(maxRanks))
-    val fresh = catalog.entries.mapValues { (id, entry) -> entry.copy(primeVariant = id in withPrime) }
+    val texts = details.englishTexts(maxRanks)
+    val withPrime = absolutesWithPrime(catalog.entries, texts.mapValues { it.value.description })
+    // Не ставятся в слот — не предлагаются: прежние записи остаются в справочнике без `max` (mergeCatalogs)
+    val unslottable = unslottableSkills(catalog.entries, texts.mapValues { it.value.command })
+    val fresh = (catalog.entries - unslottable).mapValues { (id, entry) -> entry.copy(primeVariant = id in withPrime) }
 
     val previous = if (output.exists()) parseCatalog(output.readText()) else emptyMap()
     val merged = mergeCatalogs(previous, fresh)
     output.parentFile?.mkdirs()
     output.writeText(catalogJson(merged))
-    println("Навыков: ${merged.size}, из них новых: ${(merged.keys - previous.keys).size}, «Absolute:» с «Prime:»: ${withPrime.size} → ${output.path}")
+    println("Навыков: ${merged.size}, из них новых: ${(merged.keys - previous.keys).size}, «Absolute:» с «Prime:»: ${withPrime.size}, не ставятся в слот: ${unslottable.size} → ${output.path}")
 
     val icons = IconMirror(client, output.absoluteFile.parentFile, ::println)
     println("Скачано иконок: ${icons.mirror(merged.values.map { it.icon }.distinct())}")

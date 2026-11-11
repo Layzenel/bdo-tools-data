@@ -41,15 +41,15 @@ class SkillDetailsMirror(
         }
     }
 
-    /** Английские описания навыков [skillNos] из уже скачанных файлов; навыки без файла пропускаются. */
-    fun englishDescriptions(skillNos: Collection<Int>): Map<Int, String> = skillNos.mapNotNull { skillNo ->
+    /** Английские тексты навыков [skillNos] из уже скачанных файлов; навыки без файла пропускаются. */
+    fun englishTexts(skillNos: Collection<Int>): Map<Int, SkillText> = skillNos.mapNotNull { skillNo ->
         val file = fileOf(skillNo).takeIf { it.exists() } ?: return@mapNotNull null
         val details = try {
             json.decodeFromString<SkillDetailsFile>(file.readText())
         } catch (e: IllegalArgumentException) {
             return@mapNotNull null
         }
-        skillNo to details.en.description
+        skillNo to details.en
     }.toMap()
 
     private fun download(skillNo: Int): Boolean {
