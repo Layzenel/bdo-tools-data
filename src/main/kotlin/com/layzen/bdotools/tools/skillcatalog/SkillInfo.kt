@@ -7,9 +7,11 @@ import kotlinx.serialization.Serializable
  *
  * @property name название; бывает с HTML-разметкой цвета (`<span style=…>`)
  * @property icon путь к иконке; полный адрес — `https://cdn.questlog.gg/black-desert` + путь
+ * @property cooldown перезарядка в миллисекундах; 0 — пассивный навык или навык без перезарядки
  */
 @Serializable
 data class SkillInfo(
     val name: String = "",
     val icon: String = "",
+    val cooldown: Long = 0,
 )

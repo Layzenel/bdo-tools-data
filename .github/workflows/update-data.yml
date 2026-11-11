@@ -1,8 +1,9 @@
 name: Update data
 
-# Каждый день собирает справочник навыков классов из открытого API bdolytics и, если он изменился,
-# коммитит docs/skills.json в main. GitHub Pages раздаёт папку docs/ сам после каждого коммита:
+# Каждый день собирает справочник навыков классов из открытого API bdolytics, докачивает новые иконки
+# и, если что-то изменилось, коммитит docs/ в main. GitHub Pages раздаёт папку docs/ сам после каждого коммита:
 #   https://layzenel.github.io/bdo-tools-data/skills.json
+#   https://layzenel.github.io/bdo-tools-data/assets/… (иконки, путь — из поля icon)
 #
 # GitHub отключает расписание в публичном репозитории после 60 дней без активности. Защита:
 #   1) коммиты с данными в main — это и есть активность;
@@ -49,14 +50,14 @@ jobs:
 
       - name: Commit changes
         run: |
-          if git diff --quiet -- docs; then
+          if [ -z "$(git status --porcelain -- docs)" ]; then
             echo "Данные не изменились"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs
-          git commit -m "Update skill catalog"
+          git commit -m "Update skill catalog and icons"
           git push
 
       # Навыки нового класса уже в справочнике под ключом class-<номер>; issue напоминает внести его в таблицу

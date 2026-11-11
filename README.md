@@ -5,10 +5,11 @@
 
 | Файл | Адрес | Что внутри |
 |---|---|---|
-| `docs/skills.json` | https://layzenel.github.io/bdo-tools-data/skills.json | Справочник навыков классов: `SkillNo` → классы, ветка, названия RU/EN, иконка |
+| `docs/skills.json` | https://layzenel.github.io/bdo-tools-data/skills.json | Справочник активных навыков классов (с перезарядкой): `SkillNo` → классы, ветка, названия RU/EN, иконка |
+| `docs/assets/…` | `https://layzenel.github.io/bdo-tools-data` + поле `icon` | Иконки навыков (webp) |
 
-Данные о навыках взяты из открытого API [bdolytics.com](https://bdolytics.com) (конструктор навыков).
-Иконки лежат на `https://cdn.questlog.gg/black-desert` + путь из поля `icon`.
+Данные о навыках и иконки взяты из открытого API и CDN [bdolytics.com](https://bdolytics.com) (конструктор навыков).
+Иконки — игровые ресурсы Black Desert © Pearl Abyss.
 
 ## Формат `skills.json`
 
@@ -26,5 +27,6 @@
 ## Как обновляется
 
 `.github/workflows/update-data.yml` каждый день в 05:17 UTC (и вручную) собирает справочник
-(`./gradlew run --args="docs/skills.json"`) и коммитит его, если он изменился. Если bdolytics ответил
+(`./gradlew run --args="docs/skills.json"`), докачивает иконки, которых ещё нет в `docs/`, и коммитит
+изменения. Старые навыки и иконки не удаляются. Если bdolytics ответил
 подозрительно мало навыков, файл не трогается и запуск падает. Новый класс открывает issue.

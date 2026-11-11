@@ -10,7 +10,8 @@ import kotlinx.serialization.Serializable
  * @property tree ветка: `succession` — наследие (и основные навыки), `awakening` — пробуждение
  * @property en название на английском
  * @property ru название на русском
- * @property icon путь к иконке; полный адрес — `https://cdn.questlog.gg/black-desert` + путь (CORS открыт)
+ * @property icon путь к иконке; копия лежит на Pages: `https://layzenel.github.io/bdo-tools-data` + путь
+ *   (оригинал — `https://cdn.questlog.gg/black-desert` + путь)
  */
 @Serializable
 data class CatalogEntry(

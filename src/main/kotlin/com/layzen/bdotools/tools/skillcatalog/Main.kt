@@ -8,14 +8,16 @@ import kotlin.system.exitProcess
 private const val MIN_ENTRIES = 1_000
 
 /**
- * Собирает справочник навыков и дополняет им файл из первого аргумента (см. [mergeCatalogs]).
+ * Собирает справочник навыков, дополняет им файл из первого аргумента (см. [mergeCatalogs]) и докачивает
+ * иконки в ту же папку (см. [IconMirror]).
  *
  * Номера новых классов выводятся строкой `::warning::` и, при запуске в GitHub Actions, пишутся в выход шага
  * `unknown_classes` (через запятую): по нему workflow открывает issue.
  */
 fun main(args: Array<String>) {
     val output = File(args.singleOrNull() ?: fail("Укажите файл справочника: --args=\"<путь>\""))
-    val api = BdolyticsSkillsApi(HttpClient.newHttpClient(), ::println)
+    val client = HttpClient.newHttpClient()
+    val api = BdolyticsSkillsApi(client, ::println)
     val catalog = SkillCatalog.build(english = api.skillTrees("en"), russian = api.skillTrees("ru"))
     if (catalog.entries.size < MIN_ENTRIES) fail("Навыков классов всего ${catalog.entries.size}, файл не тронут")
 
@@ -25,6 +27,9 @@ fun main(args: Array<String>) {
     output.parentFile?.mkdirs()
     output.writeText(catalogJson(merged))
     println("Навыков: ${merged.size}, из них новых: ${(merged.keys - previous.keys).size} → ${output.path}")
+
+    val icons = IconMirror(client, output.absoluteFile.parentFile, ::println)
+    println("Скачано иконок: ${icons.mirror(merged.values.map { it.icon }.distinct())}")
 }
 
 private fun reportUnknownClasses(trees: Set<String>) {

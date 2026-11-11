@@ -9,15 +9,16 @@ class SkillCatalogTest {
 
     private val english = SkillTrees(
         trees = mapOf(
-            "19" to ClassTrees(successionTree = listOf(row(5338, 1)), awakeningTree = listOf(row(700))),
+            "19" to ClassTrees(successionTree = listOf(row(5338, 1, 800)), awakeningTree = listOf(row(700))),
             "23" to ClassTrees(successionTree = listOf(row(1))),
             "99" to ClassTrees(successionTree = listOf(row(42))),
         ),
         skills = mapOf(
-            "5338" to SkillInfo("<span style=\"color: #eb9261\">Prime: Knee Hammer III</span>", "/a.webp"),
-            "1" to SkillInfo("Fitness Training", "/b.webp"),
-            "700" to SkillInfo("Fist Training", "/c.webp"),
-            "42" to SkillInfo("New Class Skill", "/d.webp"),
+            "5338" to SkillInfo("<span style=\"color: #eb9261\">Prime: Knee Hammer III</span>", "/a.webp", 5000),
+            "1" to SkillInfo("Black Spirit's Rage", "/b.webp", 1000),
+            "700" to SkillInfo("Wolf Fang", "/c.webp", 8000),
+            "42" to SkillInfo("New Class Skill", "/d.webp", 3000),
+            "800" to SkillInfo("Fist Training", "/e.webp"),
         ),
     )
     private val russian = SkillTrees(
@@ -26,10 +27,10 @@ class SkillCatalogTest {
     )
 
     @Test
-    fun collectsClassesTreeAndNames() {
+    fun collectsClassesTreeAndNamesOfSkillsWithCooldown() {
         val catalog = SkillCatalog.build(english, russian)
 
-        assertEquals(listOf(1, 42, 700, 5338), catalog.entries.keys.toList())
+        assertEquals(listOf(1, 42, 700, 5338), catalog.entries.keys.toList()) // 800 — пассивный, без перезарядки
         assertEquals(
             CatalogEntry(listOf("striker"), "succession", "Prime: Knee Hammer III", "Мощь: Коленный молот III", "/a.webp"),
             catalog.entries.getValue(5338),
@@ -42,7 +43,7 @@ class SkillCatalogTest {
         val shared = SkillCatalog.build(english, russian).entries.getValue(1)
 
         assertEquals(listOf("fury", "striker"), shared.classes)
-        assertEquals("Fitness Training", shared.ru)
+        assertEquals("Black Spirit's Rage", shared.ru)
     }
 
     @Test
@@ -69,6 +70,15 @@ class SkillCatalogTest {
         val entries = mapOf(7 to CatalogEntry(listOf("warrior"), "awakening", "A", "Б", "/i.webp"))
 
         assertEquals(entries, parseCatalog(catalogJson(entries)))
+    }
+
+    @Test
+    fun acceptsOnlyPlainAssetIconPaths() {
+        assertEquals(true, isSafeIconPath("/assets/ui_texture/icon/new_icon/04_pc_skill/01_pc_skill/16_pcm_skill/pcm_skill_5336.webp"))
+        assertEquals(false, isSafeIconPath("/assets/../../.github/workflows/x.webp"))
+        assertEquals(false, isSafeIconPath("/etc/passwd"))
+        assertEquals(false, isSafeIconPath("/assets/icon.exe"))
+        assertEquals(false, isSafeIconPath(""))
     }
 
     @Test

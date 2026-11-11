@@ -21,6 +21,7 @@ data class SkillCatalog(
         /**
          * Собирает справочник из деревьев [english] и [russian]: каждому `SkillNo` — классы, у которых он есть,
          * ветка, названия и иконка. Нет русского названия — берётся английское.
+         * Берутся только навыки с перезарядкой: их ставят в слоты, пассивные там не встречаются.
          */
         fun build(english: SkillTrees, russian: SkillTrees): SkillCatalog {
             val owners = sortedMapOf<Int, Owner>()
@@ -33,7 +34,7 @@ data class SkillCatalog(
                 }
             }
             val entries = owners.mapNotNull { (id, owner) ->
-                val info = english.skills[id.toString()] ?: return@mapNotNull null
+                val info = english.skills[id.toString()]?.takeIf { it.cooldown > 0 } ?: return@mapNotNull null
                 val englishName = cleanSkillName(info.name)
                 val russianName = russian.skills[id.toString()]?.let { cleanSkillName(it.name) }
                 id to CatalogEntry(
