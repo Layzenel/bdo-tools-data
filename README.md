@@ -5,7 +5,8 @@
 
 | Файл | Адрес | Что внутри |
 |---|---|---|
-| `docs/skills.json` | https://layzenel.github.io/bdo-tools-data/skills.json | Справочник активных навыков классов (с перезарядкой): `SkillNo` → классы, ветка, названия RU/EN, иконка |
+| `docs/skills.json` | https://layzenel.github.io/bdo-tools-data/skills.json | Справочник активных навыков классов (с перезарядкой): `SkillNo` → классы, стойка, ранг, названия RU/EN, иконка |
+| `docs/skills/<SkillNo>.json` | `https://layzenel.github.io/bdo-tools-data/skills/<SkillNo>.json` | Тексты тултипа навыка последнего ранга на русском и английском |
 | `docs/assets/…` | `https://layzenel.github.io/bdo-tools-data` + поле `icon` | Иконки навыков (webp) |
 
 Данные о навыках и иконки взяты из открытого API и CDN [bdolytics.com](https://bdolytics.com) (конструктор навыков).
@@ -24,12 +25,23 @@
 - `stance` — стойка: `succession` (наследие: «Prime:», требуют пассивку «Succession: …»), `awakening`
   (дерево пробуждения); нет поля — обе (основные навыки, «Absolute:», «Flow:»).
 - `max` — последний ранг: нет ни следующего ранга в клетке дерева, ни «Absolute:» этого навыка; нет поля — не последний.
+- `primeVariant` — у навыка «Absolute:» есть вариант наследия «Prime:» в том же классе: по строке «Skills you
+  cannot learn after learning this skill» в описании «Prime:» или по паре названий. Персонажу наследия он не нужен.
 - Навыки, которые пропали из bdolytics, из справочника не удаляются: их номера ещё лежат в файлах игроков.
   Предлагать их уже не нужно, поэтому `max` у них снимается.
+
+## Формат `skills/<SkillNo>.json`
+
+`{"ru": {…}, "en": {…}}` — поля ответа `database.getSkill` bdolytics как есть: `name`, `description`,
+`requiredSkillPoints`, `requiredLevel`, `requiredMp`, `requiredSp`, `cooldown` (мс), `command`, `tooltip`
+(эффекты по группам). Цвет в тексте — теги `<span style="color: #…">`, клавиши — `{KeyBind:<действие>}`
+(как `InputType` в `ShortcutKey_Action_Key` файла персонажа). Нулевые и пустые поля не пишутся.
 
 ## Как обновляется
 
 `.github/workflows/update-data.yml` каждый день в 05:17 UTC (и вручную) собирает справочник
-(`./gradlew run --args="docs/skills.json"`), докачивает иконки, которых ещё нет в `docs/`, и коммитит
-изменения. Старые навыки и иконки не удаляются. Если bdolytics ответил
-подозрительно мало навыков, файл не трогается и запуск падает. Новый класс открывает issue.
+(`./gradlew run --args="docs/skills.json"`), докачивает иконки и подробности новых навыков, которых ещё нет
+в `docs/`, и коммитит изменения; по четвергам (после патча) подробности перекачиваются все. Запросы подробностей
+идут по одному с паузой, чтобы не упираться в ограничение bdolytics (HTTP 429). Старые навыки, иконки и подробности
+не удаляются. Если bdolytics ответил подозрительно мало навыков, файл не трогается и запуск падает.
+Новый класс открывает issue.

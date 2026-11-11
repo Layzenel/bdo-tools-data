@@ -11,6 +11,8 @@ import kotlinx.serialization.Serializable
  *   `awakening` — только пробуждение, `both` — обе (основные навыки, «Absolute:», «Flow:»)
  * @property max последний ранг навыка: нет ни следующего ранга, ни его «Absolute:». Только такие навыки
  *   предлагаются при выборе; навыки, пропавшие из bdolytics, — `false`
+ * @property primeVariant навык «Absolute:», у которого в классе есть вариант наследия «Prime:» (см. [absolutesWithPrime]):
+ *   персонажу наследия он не нужен, приложение может его спрятать
  * @property en название на английском
  * @property ru название на русском
  * @property icon путь к иконке; копия лежит на Pages: `https://layzenel.github.io/bdo-tools-data` + путь
@@ -24,4 +26,5 @@ data class CatalogEntry(
     val en: String,
     val ru: String,
     val icon: String,
+    val primeVariant: Boolean = false,
 )

@@ -26,7 +26,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -44,9 +44,12 @@ jobs:
 
       - name: Build skill catalog
         id: catalog
+        # Подробности для тултипов: каждый день — только новых навыков, по четвергам (после патча) — всех
         run: |
           chmod +x gradlew
-          ./gradlew test run --args="docs/skills.json"
+          refresh=""
+          if [ "$(date -u +%u)" = "4" ]; then refresh="--refresh-details"; fi
+          ./gradlew test run --args="docs/skills.json $refresh"
 
       - name: Commit changes
         run: |

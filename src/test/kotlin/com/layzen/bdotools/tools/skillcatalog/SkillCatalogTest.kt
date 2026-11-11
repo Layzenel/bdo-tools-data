@@ -105,6 +105,31 @@ class SkillCatalogTest {
     }
 
     @Test
+    fun readsSkillResponseAndSkipsUnusedFields() {
+        val body = """{"result":{"data":{"id":"5359","name":"<span>Мощь</span>","icon":"/i.webp","description":"D\nE","requiredSkillPoints":30,"requiredLevel":58,"requiredMp":50,"requiredSp":0,"cooldown":8000,"command":"{KeyBind:Dash}","tooltip":[["A"],["B","C"]],"isDisabled":false}}}"""
+
+        val text = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }.decodeFromString<SkillResponse>(body).result.data
+
+        assertEquals(SkillText("<span>Мощь</span>", "D\nE", 30, 58, 50, 0, 8000, "{KeyBind:Dash}", listOf(listOf("A"), listOf("B", "C"))), text)
+    }
+
+    @Test
+    fun absoluteWithPrimeByNameOrByLockLine() {
+        fun entry(en: String, vararg classes: String) = CatalogEntry(classes.toList(), Stance.BOTH, true, en, en, "/i.webp")
+        val entries = mapOf(
+            1 to entry("Absolute: Knee Hammer", "striker"),
+            2 to entry("Prime: Knee Hammer III", "striker"),
+            3 to entry("Absolute: Rage Hammer", "striker"),
+            4 to entry("Prime: Great Wrath", "striker"),
+            5 to entry("Absolute: Wolf Fang", "striker"),
+            6 to entry("Prime: Wolf Fang", "mystic"),
+        )
+        val descriptions = mapOf(4 to "Skills you cannot learn after learning this skill: <span>[Absolute: Rage Hammer]</span>")
+
+        assertEquals(setOf(1, 3), absolutesWithPrime(entries, descriptions)) // 5 — «Prime:» другого класса
+    }
+
+    @Test
     fun cleansMarkupAndEntities() {
         assertEquals("Fire & Ice", cleanSkillName("<span style=\"c\">Fire &amp; Ice</span> "))
     }
