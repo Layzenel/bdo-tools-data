@@ -775,6 +775,7 @@
 "5653":{"classes":["hashashin"],"stance":"awakening","max":true,"en":"Flow: Voracity","ru":"Комбо: Поглощение","icon":"/assets/ui_texture/icon/new_icon/04_pc_skill/01_pc_skill/18_pam_skill/pam_skill_5653.webp"},
 "5705":{"classes":["sorceress"],"max":true,"en":"Shards of Darkness IV","ru":"Частица тьмы IV","icon":"/assets/ui_texture/icon/new_icon/04_pc_skill/01_pc_skill/02_phw_skill/phw_skill_1048.webp"},
 "5706":{"classes":["sorceress"],"max":true,"en":"Crow Food II","ru":"Ночной ворон II","icon":"/assets/ui_texture/icon/new_icon/04_pc_skill/01_pc_skill/02_phw_skill/phw_skill_0170.webp"},
+"5712":{"classes":["hashashin"],"max":true,"en":"Aal's Mirage","ru":"Мираж Ааля","icon":"/assets/ui_texture/icon/new_icon/04_pc_skill/01_pc_skill/18_pam_skill/pam_skill_5712.webp"},
 "5728":{"classes":["nova"],"max":true,"en":"Evasion","ru":"Мобильное уклонение","icon":"/assets/ui_texture/icon/new_icon/04_pc_skill/01_pc_skill/21_ppw_skill/ppw_skill_5728.webp"},
 "5751":{"classes":["nova"],"en":"Quoratum's Protection I","ru":"Защита Кратума I","icon":"/assets/ui_texture/icon/new_icon/04_pc_skill/01_pc_skill/21_ppw_skill/ppw_skill_5751.webp"},
 "5784":{"classes":["nova"],"en":"Affliction I","ru":"Расплата I","icon":"/assets/ui_texture/icon/new_icon/04_pc_skill/01_pc_skill/21_ppw_skill/ppw_skill_5784.webp"},
