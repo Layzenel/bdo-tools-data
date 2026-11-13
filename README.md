@@ -6,6 +6,7 @@
 | Файл | Адрес | Что внутри |
 |---|---|---|
 | `docs/skills.json` | https://layzenel.github.io/bdo-tools-data/skills.json | Справочник активных навыков классов (с перезарядкой): `SkillNo` → классы, стойка, ранг, названия RU/EN, иконка |
+| `docs/skills-no-cooldown.json` | https://layzenel.github.io/bdo-tools-data/skills-no-cooldown.json | Активные навыки без перезарядки («Flow:», удары с движением) в том же формате: их нет в слотах перезарядки, но игра пишет их в историю использования навыков. Пассивных навыков (команда `Passive`) нет ни в одном файле |
 | `docs/skills/<SkillNo>.json` | `https://layzenel.github.io/bdo-tools-data/skills/<SkillNo>.json` | Тексты тултипа навыка последнего ранга на русском и английском |
 | `docs/assets/…` | `https://layzenel.github.io/bdo-tools-data` + поле `icon` | Иконки навыков (webp) |
 

@@ -14,8 +14,15 @@ private const val REFRESH_DETAILS = "--refresh-details"
 private const val DETAILS_FOLDER = "skills"
 
 /**
- * Собирает справочник навыков, дополняет им файл из первого аргумента (см. [mergeCatalogs]), докачивает
- * иконки в ту же папку (см. [IconMirror]) и подробности для тултипов в `skills/` (см. [SkillDetailsMirror]);
+ * Справочник активных навыков без перезарядки рядом с основным. Отдельный файл, а не поле в `skills.json`:
+ * уже установленные версии приложения иначе предложили бы эти навыки в слоты перезарядки.
+ */
+private const val NO_COOLDOWN_FILE = "skills-no-cooldown.json"
+
+/**
+ * Собирает справочник навыков, дополняет им файл из первого аргумента (см. [mergeCatalogs]), а навыками без
+ * перезарядки — [NO_COOLDOWN_FILE] рядом с ним, докачивает иконки в ту же папку (см. [IconMirror]) и подробности
+ * для тултипов в `skills/` (см. [SkillDetailsMirror], только навыки с перезарядкой);
  * с флагом [REFRESH_DETAILS] подробности перекачиваются все.
  *
  * Номера новых классов выводятся строкой `::warning::` и, при запуске в GitHub Actions, пишутся в выход шага
@@ -42,14 +49,22 @@ fun main(args: Array<String>) {
     val unslottable = unslottableSkills(catalog.entries, texts.mapValues { it.value.command })
     val fresh = (catalog.entries - unslottable).mapValues { (id, entry) -> entry.copy(primeVariant = id in withPrime) }
 
-    val previous = if (output.exists()) parseCatalog(output.readText()) else emptyMap()
-    val merged = mergeCatalogs(previous, fresh)
-    output.parentFile?.mkdirs()
-    output.writeText(catalogJson(merged))
-    println("Навыков: ${merged.size}, из них новых: ${(merged.keys - previous.keys).size}, «Absolute:» с «Prime:»: ${withPrime.size}, не ставятся в слот: ${unslottable.size} → ${output.path}")
+    val merged = writeMerged(output, fresh)
+    println("«Absolute:» с «Prime:»: ${withPrime.size}, не ставятся в слот: ${unslottable.size}")
+    val noCooldown = writeMerged(File(output.absoluteFile.parentFile, NO_COOLDOWN_FILE), catalog.noCooldown)
 
     val icons = IconMirror(client, output.absoluteFile.parentFile, ::println)
-    println("Скачано иконок: ${icons.mirror(merged.values.map { it.icon }.distinct())}")
+    println("Скачано иконок: ${icons.mirror((merged.values + noCooldown.values).map { it.icon }.distinct())}")
+}
+
+/** Дополняет справочник в [file] навыками [fresh] (см. [mergeCatalogs]), записывает и возвращает результат. */
+private fun writeMerged(file: File, fresh: Map<Int, CatalogEntry>): Map<Int, CatalogEntry> {
+    val previous = if (file.exists()) parseCatalog(file.readText()) else emptyMap()
+    val merged = mergeCatalogs(previous, fresh)
+    file.parentFile?.mkdirs()
+    file.writeText(catalogJson(merged))
+    println("Навыков: ${merged.size}, из них новых: ${(merged.keys - previous.keys).size} → ${file.path}")
+    return merged
 }
 
 private fun reportUnknownClasses(trees: Set<String>) {

@@ -13,7 +13,7 @@ class SkillCatalogTest {
     private val english = SkillTrees(
         trees = mapOf(
             "19" to ClassTrees(
-                successionTree = listOf(row(5000, 5001), row(5100), row(5338), row(1), row(800)),
+                successionTree = listOf(row(5000, 5001), row(5100), row(5338), row(1), row(800), row(705), row(2553)),
                 awakeningTree = listOf(row(700)),
             ),
             "23" to ClassTrees(successionTree = listOf(row(1))),
@@ -27,7 +27,9 @@ class SkillCatalogTest {
             "1" to skill("Black Spirit's Rage"),
             "700" to skill("Wolf Fang", 8000),
             "42" to skill("New Class Skill"),
-            "800" to skill("Fist Training", cooldown = 0),
+            "800" to skill("Fist Training", cooldown = 0).copy(command = "<span>Passive</span>"),
+            "705" to skill("Forward Slash IV", cooldown = 0).copy(command = "{KeyBind:MoveFront} + {KeyBind:Attack1}"),
+            "2553" to skill("Flow: Deathstrike", cooldown = 0),
         ),
     )
     private val russian = SkillTrees(
@@ -39,10 +41,19 @@ class SkillCatalogTest {
 
     @Test
     fun collectsClassesNamesAndSkipsPassives() {
-        assertEquals(listOf(1, 42, 700, 5000, 5001, 5100, 5338), catalog.entries.keys.toList()) // 800 — без перезарядки
+        assertEquals(listOf(1, 42, 700, 5000, 5001, 5100, 5338), catalog.entries.keys.toList()) // 705, 800, 2553 — без перезарядки
         assertEquals(
             CatalogEntry(listOf("striker"), Stance.SUCCESSION, true, "Prime: Knee Hammer III", "Мощь: Коленный молот III", "/<span style=\"color: #eb9261\">Prime: Knee Hammer III</span>.webp"),
             catalog.entries.getValue(5338),
+        )
+    }
+
+    @Test
+    fun activeSkillsWithoutCooldownGoSeparatelyAndPassivesNowhere() {
+        assertEquals(listOf(705), catalog.noCooldown.keys.toList()) // 800 — Passive, 2553 — без команды
+        assertEquals(
+            CatalogEntry(listOf("striker"), Stance.BOTH, true, "Forward Slash IV", "Forward Slash IV", "/Forward Slash IV.webp"),
+            catalog.noCooldown.getValue(705),
         )
     }
 
