@@ -32,25 +32,13 @@ class BdolyticsSkillsApi(
             .header("User-Agent", USER_AGENT)
             .timeout(Duration.ofMinutes(2))
             .build()
-        val body = withRetry(language) {
+        val body = withRetry(language, log, ATTEMPTS, RETRY_PAUSE_MS) {
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
             if (response.statusCode() != 200) throw IOException("HTTP ${response.statusCode()}")
             response.body()
         }
         log("$language: получено ${body.length / 1024} КБ")
         return json.decodeFromString<SkillTreesResponse>(body).result.data
-    }
-
-    private fun <T> withRetry(what: String, block: () -> T): T {
-        repeat(ATTEMPTS - 1) { attempt ->
-            try {
-                return block()
-            } catch (e: IOException) {
-                log("$what: ${e.message}, повтор")
-                Thread.sleep(RETRY_PAUSE_MS * (attempt + 1))
-            }
-        }
-        return block()
     }
 
     private companion object {
