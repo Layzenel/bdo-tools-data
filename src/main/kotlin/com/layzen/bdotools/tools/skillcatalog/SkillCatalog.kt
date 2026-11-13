@@ -34,12 +34,19 @@ data class SkillCatalog(
          * стойка, последний ли это ранг, названия и иконка. Нет русского названия — берётся английское.
          * Навыки с перезарядкой идут в [SkillCatalog.entries], активные без неё — в [SkillCatalog.noCooldown];
          * пассивные (команда `Passive` или пустая) не попадают никуда.
+         *
+         * [rabams] — исходные навыки каждой рабамы (`SkillNo` → два `SkillNo`): в деревьях рабам нет, их описания
+         * должны лежать в `skills` обоих языков. Класс рабамы — классы исходных навыков; стойка — пробуждение, если
+         * исходный навык из дерева пробуждения, наследие — если исходный навык наследия. Рабама без известных
+         * исходных навыков пропускается.
          */
-        fun build(english: SkillTrees, russian: SkillTrees): SkillCatalog {
+        fun build(english: SkillTrees, russian: SkillTrees, rabams: Map<Int, List<Int>> = emptyMap()): SkillCatalog {
             val unknownTrees = sortedSetOf<String>()
-            val owners = owners(english, unknownTrees)
+            val treeOwners = owners(english, unknownTrees)
+            val owners = treeOwners + rabamOwners(rabams, treeOwners)
             val superseded = supersededSkills(english)
-            val succession = successionSkills(english)
+            val treeSuccession = successionSkills(english)
+            val succession = treeSuccession + rabams.filterValues { parents -> parents.any { it in treeSuccession } }.keys
             val withCooldown = sortedMapOf<Int, CatalogEntry>()
             val noCooldown = sortedMapOf<Int, CatalogEntry>()
             for ((id, owner) in owners) {
@@ -71,6 +78,14 @@ data class SkillCatalog(
             }
             return owners
         }
+
+        /** Чьи рабамы: классы исходных навыков, дерево — пробуждение, если хоть один исходный навык оттуда. */
+        private fun rabamOwners(rabams: Map<Int, List<Int>>, treeOwners: Map<Int, Owner>): Map<Int, Owner> =
+            rabams.mapNotNull { (id, parents) ->
+                val parentOwners = parents.mapNotNull { treeOwners[it] }.ifEmpty { return@mapNotNull null }
+                val tree = if (parentOwners.any { it.tree == AWAKENING_TREE }) AWAKENING_TREE else parentOwners.first().tree
+                id to Owner(tree).apply { parentOwners.forEach { classes += it.classes } }
+            }.toMap()
 
         /** Пассивный навык: у него нет команды или вместо неё написано `Passive`. */
         private fun SkillInfo.isPassive(): Boolean = cleanSkillName(command).let { it.isEmpty() || it == PASSIVE_COMMAND }

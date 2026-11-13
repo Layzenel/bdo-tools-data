@@ -7,6 +7,9 @@ import kotlin.system.exitProcess
 /** Меньше навыков классов не бывает: значит, API ответил не тем, и трогать справочник нельзя. */
 private const val MIN_ENTRIES = 1_000
 
+/** Меньше рабам не бывает (в ноябре 2026 их 174): значит, bdocodex ответил не тем, и трогать справочник нельзя. */
+private const val MIN_RABAMS = 100
+
 /** Флаг: перекачать подробности всех навыков, а не только новых (раз в неделю — тексты меняются с патчами). */
 private const val REFRESH_DETAILS = "--refresh-details"
 
@@ -20,7 +23,7 @@ private const val DETAILS_FOLDER = "skills"
 private const val NO_COOLDOWN_FILE = "skills-no-cooldown.json"
 
 /**
- * Собирает справочник навыков, дополняет им файл из первого аргумента (см. [mergeCatalogs]), а навыками без
+ * Собирает справочник навыков вместе с рабамами (номера — из bdocodex, см. [BdocodexRabamApi]), дополняет им файл из первого аргумента (см. [mergeCatalogs]), а навыками без
  * перезарядки — [NO_COOLDOWN_FILE] рядом с ним, докачивает иконки в ту же папку (см. [IconMirror]) и подробности
  * для тултипов в `skills/` (см. [SkillDetailsMirror], только навыки с перезарядкой);
  * с флагом [REFRESH_DETAILS] подробности перекачиваются все.
@@ -33,13 +36,23 @@ fun main(args: Array<String>) {
     val output = File(args.singleOrNull { it != REFRESH_DETAILS } ?: fail("Укажите файл справочника: --args=\"<путь> [$REFRESH_DETAILS]\""))
     val client = HttpClient.newHttpClient()
     val api = BdolyticsSkillsApi(client, ::println)
-    val catalog = SkillCatalog.build(english = api.skillTrees("en"), russian = api.skillTrees("ru"))
+    val details = SkillDetailsMirror(client, File(output.absoluteFile.parentFile, DETAILS_FOLDER), ::println)
+    val rabams = BdocodexRabamApi(client, ::println).rabams()
+    if (rabams.size < MIN_RABAMS) fail("Рабам всего ${rabams.size}, файл не тронут")
+    // Названия и перезарядка рабам — из подробностей bdolytics: в деревьях их нет. С флагом обновятся ниже
+    details.mirror(rabams.map { it.id }, refresh = false)
+    val rabamTexts = details.texts(rabams.map { it.id })
+    println("Рабам: ${rabams.size}, с подробностями: ${rabamTexts.size}")
+    val catalog = SkillCatalog.build(
+        english = api.skillTrees("en").withRabams(rabams, rabamTexts) { it.en },
+        russian = api.skillTrees("ru").withRabams(rabams, rabamTexts) { it.ru },
+        rabams = rabams.associate { it.id to it.parents },
+    )
     if (catalog.entries.size < MIN_ENTRIES) fail("Навыков классов всего ${catalog.entries.size}, файл не тронут")
 
     reportUnknownClasses(catalog.unknownTrees)
 
-    // Сначала подробности: по описаниям «Prime:» отмечаются «Absolute:», которые после них не учатся
-    val details = SkillDetailsMirror(client, File(output.absoluteFile.parentFile, DETAILS_FOLDER), ::println)
+    // Сначала подробности: по описаниям «Prime:» отмечаются «Absolute:», которые после них не учатся.
     // Подробности — только последних рангов: их ставят в слоты и предлагают при выборе; так втрое меньше запросов
     val maxRanks = catalog.entries.filterValues { it.max }.keys
     println("Записано подробностей: ${details.mirror(maxRanks, refreshDetails)}")
@@ -56,6 +69,13 @@ fun main(args: Array<String>) {
     val icons = IconMirror(client, output.absoluteFile.parentFile, ::println)
     println("Скачано иконок: ${icons.mirror((merged.values + noCooldown.values).map { it.icon }.distinct())}")
 }
+
+/** Деревья с описаниями рабам из их подробностей [texts] на языке [language]; рабамы без подробностей пропускаются. */
+private fun SkillTrees.withRabams(rabams: List<Rabam>, texts: Map<Int, SkillDetailsFile>, language: (SkillDetailsFile) -> SkillText) =
+    copy(skills = skills + rabams.mapNotNull { rabam ->
+        val text = texts[rabam.id]?.let(language) ?: return@mapNotNull null
+        rabam.id.toString() to SkillInfo(text.name, rabam.icon, text.cooldown, command = text.command)
+    })
 
 /** Дополняет справочник в [file] навыками [fresh] (см. [mergeCatalogs]), записывает и возвращает результат. */
 private fun writeMerged(file: File, fresh: Map<Int, CatalogEntry>): Map<Int, CatalogEntry> {
