@@ -63,7 +63,11 @@ data class SkillCatalog(
                 }
                 target[id] = entry(info, russian.skills[id.toString()], owner, stance, max = id !in superseded)
             }
-            return SkillCatalog(withCooldown, noCooldown, unknownTrees)
+            val links = followUps(withCooldown + noCooldown, english.skills.mapNotNull { (id, info) -> id.toIntOrNull()?.let { it to info.command } }.toMap())
+            fun Map<Int, CatalogEntry>.linked() = mapValues { (id, entry) ->
+                links[id]?.let { entry.copy(after = it.after, only = it.only) } ?: entry
+            }.toSortedMap()
+            return SkillCatalog(withCooldown.linked(), noCooldown.linked(), unknownTrees)
         }
 
         /** Классы каждого навыка из деревьев; номера неизвестных деревьев добавляются в [unknownTrees]. */
@@ -100,6 +104,7 @@ data class SkillCatalog(
                 en = englishName,
                 ru = russianName?.takeIf { it.isNotEmpty() } ?: englishName,
                 icon = info.icon,
+                cooldown = info.cooldown,
             )
         }
     }
