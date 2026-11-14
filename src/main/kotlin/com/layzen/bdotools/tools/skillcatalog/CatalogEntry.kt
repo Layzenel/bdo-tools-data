@@ -17,6 +17,10 @@ import kotlinx.serialization.Serializable
  * @property ru название на русском
  * @property icon путь к иконке; копия лежит на Pages: `https://layzenel.github.io/bdo-tools-data` + путь
  *   (оригинал — `https://cdn.questlog.gg/black-desert` + путь)
+ * @property after последние ранги навыков того же класса, сразу после которых команда позволяет применить этот
+ *   («after …», «during …» в команде, см. [followUps])
+ * @property only продолжение связки: все команды навыка — «после …», сам по себе он не применяется
+ * @property cooldown перезарядка в миллисекундах; у навыков без перезарядки поля нет
  */
 @Serializable
 data class CatalogEntry(
@@ -27,4 +31,7 @@ data class CatalogEntry(
     val ru: String,
     val icon: String,
     val primeVariant: Boolean = false,
+    val after: List<Int> = emptyList(),
+    val only: Boolean = false,
+    val cooldown: Long = 0,
 )

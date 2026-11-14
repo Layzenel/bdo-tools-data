@@ -38,7 +38,7 @@ class RabamTest {
         val catalog = SkillCatalog.build(english, russian, mapOf(100 to listOf(10, 11), 101 to listOf(10, 20), 102 to listOf(7, 8)))
 
         assertEquals(
-            CatalogEntry(listOf("striker"), Stance.BOTH, true, "Silent Strike", "Бесшумный удар", "/r100.webp"),
+            CatalogEntry(listOf("striker"), Stance.BOTH, true, "Silent Strike", "Бесшумный удар", "/r100.webp", cooldown = 8000),
             catalog.entries.getValue(100),
         )
         assertEquals(Stance.AWAKENING, catalog.entries.getValue(101).stance)

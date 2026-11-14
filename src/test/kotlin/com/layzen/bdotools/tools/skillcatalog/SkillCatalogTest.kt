@@ -43,7 +43,7 @@ class SkillCatalogTest {
     fun collectsClassesNamesAndSkipsPassives() {
         assertEquals(listOf(1, 42, 700, 5000, 5001, 5100, 5338), catalog.entries.keys.toList()) // 705, 800, 2553 — без перезарядки
         assertEquals(
-            CatalogEntry(listOf("striker"), Stance.SUCCESSION, true, "Prime: Knee Hammer III", "Мощь: Коленный молот III", "/<span style=\"color: #eb9261\">Prime: Knee Hammer III</span>.webp"),
+            CatalogEntry(listOf("striker"), Stance.SUCCESSION, true, "Prime: Knee Hammer III", "Мощь: Коленный молот III", "/<span style=\"color: #eb9261\">Prime: Knee Hammer III</span>.webp", cooldown = 5000),
             catalog.entries.getValue(5338),
         )
     }

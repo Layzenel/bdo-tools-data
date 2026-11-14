@@ -25,7 +25,7 @@ private const val NO_COOLDOWN_FILE = "skills-no-cooldown.json"
 /**
  * Собирает справочник навыков вместе с рабамами (номера — из bdocodex, см. [BdocodexRabamApi]), дополняет им файл из первого аргумента (см. [mergeCatalogs]), а навыками без
  * перезарядки — [NO_COOLDOWN_FILE] рядом с ним, докачивает иконки в ту же папку (см. [IconMirror]) и подробности
- * для тултипов в `skills/` (см. [SkillDetailsMirror], только навыки с перезарядкой);
+ * для тултипов в `skills/` (см. [SkillDetailsMirror], последние ранги обоих справочников);
  * с флагом [REFRESH_DETAILS] подробности перекачиваются все.
  *
  * Номера новых классов выводятся строкой `::warning::` и, при запуске в GitHub Actions, пишутся в выход шага
@@ -55,7 +55,9 @@ fun main(args: Array<String>) {
     // Сначала подробности: по описаниям «Prime:» отмечаются «Absolute:», которые после них не учатся.
     // Подробности — только последних рангов: их ставят в слоты и предлагают при выборе; так втрое меньше запросов
     val maxRanks = catalog.entries.filterValues { it.max }.keys
-    println("Записано подробностей: ${details.mirror(maxRanks, refreshDetails)}")
+    // Навыкам без перезарядки подробности тоже нужны: команды и урон для редактора комбо
+    val noCooldownMax = catalog.noCooldown.filterValues { it.max }.keys
+    println("Записано подробностей: ${details.mirror(maxRanks + noCooldownMax, refreshDetails)}")
     val texts = details.englishTexts(maxRanks)
     val withPrime = absolutesWithPrime(catalog.entries, texts.mapValues { it.value.description })
     // Не ставятся в слот — не предлагаются: прежние записи остаются в справочнике без `max` (mergeCatalogs)
