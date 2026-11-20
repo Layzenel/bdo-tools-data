@@ -47,6 +47,9 @@ object SkillTreeClasses {
     /** Ключ класса по номеру дерева или `null`, если номер новый и его надо внести в таблицу. */
     fun classKey(treeNumber: String): String? = CLASSES[treeNumber]
 
+    /** Номер дерева по ключу класса или `null` для временного ключа. */
+    fun treeNumber(classKey: String): String? = CLASSES.entries.firstOrNull { it.value == classKey }?.key
+
     /**
      * Временный ключ нового класса, пока его нет в таблице: `class-<номер>`. Приложение сравнивает классы
      * по ключу, поэтому проверка импорта работает и для него, неизвестно только название класса.

@@ -23,7 +23,7 @@ private const val DETAILS_FOLDER = "skills"
 private const val NO_COOLDOWN_FILE = "skills-no-cooldown.json"
 
 /**
- * Собирает справочник навыков вместе с рабамами (номера — из bdocodex, см. [BdocodexRabamApi]), дополняет им файл из первого аргумента (см. [mergeCatalogs]), а навыками без
+ * Собирает справочник навыков вместе с рабамами (номера — из bdocodex, см. [BdocodexRabamApi], и [MANUAL_RABAMS]), дополняет им файл из первого аргумента (см. [mergeCatalogs]), а навыками без
  * перезарядки — [NO_COOLDOWN_FILE] рядом с ним, докачивает иконки в ту же папку (см. [IconMirror]) и подробности
  * для тултипов в `skills/` (см. [SkillDetailsMirror], последние ранги обоих справочников);
  * с флагом [REFRESH_DETAILS] подробности перекачиваются все.
@@ -37,8 +37,10 @@ fun main(args: Array<String>) {
     val client = HttpClient.newHttpClient()
     val api = BdolyticsSkillsApi(client, ::println)
     val details = SkillDetailsMirror(client, File(output.absoluteFile.parentFile, DETAILS_FOLDER), ::println)
-    val rabams = BdocodexRabamApi(client, ::println).rabams()
-    if (rabams.size < MIN_RABAMS) fail("Рабам всего ${rabams.size}, файл не тронут")
+    val codex = BdocodexRabamApi(client, ::println)
+    val codexRabams = codex.rabams()
+    if (codexRabams.size < MIN_RABAMS) fail("Рабам всего ${codexRabams.size}, файл не тронут")
+    val rabams = (codexRabams + MANUAL_RABAMS).distinctBy { it.id }
     // Названия и перезарядка рабам — из подробностей bdolytics: в деревьях их нет. С флагом обновятся ниже
     details.mirror(rabams.map { it.id }, refresh = false)
     val rabamTexts = details.texts(rabams.map { it.id })
@@ -47,7 +49,7 @@ fun main(args: Array<String>) {
         english = api.skillTrees("en").withRabams(rabams, rabamTexts) { it.en },
         russian = api.skillTrees("ru").withRabams(rabams, rabamTexts) { it.ru },
         rabams = rabams.associate { it.id to it.parents },
-    )
+    ).narrowRabamClasses(codex, rabams.map { it.id }.toSet())
     if (catalog.entries.size < MIN_ENTRIES) fail("Навыков классов всего ${catalog.entries.size}, файл не тронут")
 
     reportUnknownClasses(catalog.unknownTrees)
@@ -78,6 +80,23 @@ private fun SkillTrees.withRabams(rabams: List<Rabam>, texts: Map<Int, SkillDeta
         val text = texts[rabam.id]?.let(language) ?: return@mapNotNull null
         rabam.id.toString() to SkillInfo(text.name, rabam.icon, text.cooldown, command = text.command)
     })
+
+/**
+ * Рабамам нескольких классов (общие исходные навыки у пар классов) оставляет классы, в дереве которых они есть
+ * на bdocodex: страницы запрашиваются только для этих классов (см. [narrowRabamClasses]).
+ */
+private fun SkillCatalog.narrowRabamClasses(codex: BdocodexRabamApi, rabamIds: Set<Int>): SkillCatalog {
+    val shared = (entries + noCooldown).filterKeys { it in rabamIds }.values
+        .filter { it.classes.size > 1 }
+        .flatMap { it.classes }
+        .toSet()
+    val onPage = shared.mapNotNull { key -> SkillTreeClasses.treeNumber(key)?.let { key to codex.classRabamIds(it) } }.toMap()
+    println("Рабамы нескольких классов: проверены деревья ${onPage.keys.sorted()}")
+    return copy(
+        entries = narrowRabamClasses(entries, rabamIds, onPage),
+        noCooldown = narrowRabamClasses(noCooldown, rabamIds, onPage),
+    )
+}
 
 /** Дополняет справочник в [file] навыками [fresh] (см. [mergeCatalogs]), записывает и возвращает результат. */
 private fun writeMerged(file: File, fresh: Map<Int, CatalogEntry>): Map<Int, CatalogEntry> {

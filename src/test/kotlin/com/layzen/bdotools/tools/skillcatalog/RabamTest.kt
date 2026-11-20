@@ -20,6 +20,28 @@ class RabamTest {
     }
 
     @Test
+    fun parsesRabamCellsOfClassTree() {
+        val html = """<div class="skill_cell" data-gid="7003" data-id="2425"></div>""" +
+            """<div class="skill_cell fusion_skill" data-gid="7069" data-id="2911" data-level="57"></div>"""
+
+        assertEquals(setOf(2911), parseClassRabamIds(html))
+    }
+
+    @Test
+    fun sharedRabamKeepsOnlyClassesWhoseTreeHasIt() {
+        fun entry(vararg classes: String) = CatalogEntry(classes.toList(), en = "x", ru = "x", icon = "")
+        val entries = mapOf(2753 to entry("kunoichi", "ninja"), 2755 to entry("kunoichi", "ninja"), 1 to entry("kunoichi", "ninja"), 9 to entry("wizard", "witch"))
+        val onPage = mapOf("kunoichi" to setOf(2753), "ninja" to setOf(2755), "wizard" to emptySet(), "witch" to emptySet())
+
+        val narrowed = narrowRabamClasses(entries, setOf(2753, 2755, 9), onPage)
+
+        assertEquals(listOf("kunoichi"), narrowed.getValue(2753).classes)
+        assertEquals(listOf("ninja"), narrowed.getValue(2755).classes)
+        assertEquals(listOf("kunoichi", "ninja"), narrowed.getValue(1).classes) // не рабама
+        assertEquals(listOf("wizard", "witch"), narrowed.getValue(9).classes) // нет ни в одном дереве — как было
+    }
+
+    @Test
     fun rabamTakesClassesAndStanceFromParents() {
         fun row(vararg skills: Int) = listOf(ClassTrees.Node(skills.toList()))
         val english = SkillTrees(
