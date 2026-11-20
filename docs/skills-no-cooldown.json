@@ -1061,6 +1061,8 @@
 "9769":{"classes":["seraph"],"stance":"awakening","max":true,"en":"Sacramentum","ru":"Нерушимая клятва","icon":"/assets/ui_texture/icon/new_icon/04_pc_skill/01_pc_skill/33_pdkl_skill/pdkl_skill_9769.webp"},
 "9796":{"classes":["seraph"],"stance":"awakening","max":true,"en":"Purgatum","ru":"Приговор судьбы","icon":"/assets/ui_texture/icon/new_icon/04_pc_skill/01_pc_skill/33_pdkl_skill/pdkl_skill_9796.webp"},
 "9848":{"classes":["seraph"],"max":true,"en":"Rage Absorption","ru":"Поглощение гнева","icon":"/assets/ui_texture/icon/new_icon/04_pc_skill/01_pc_skill/00_common/common_skill_0090.webp"},
+"9854":{"classes":["seraph"],"max":true,"en":"Focus: Crossing Slash","ru":"Концентрация: Перекрестный разрез","icon":"/assets/ui_texture/icon/new_icon/04_pc_skill/01_pc_skill/33_pdkl_skill/pdkl_skill_9854.webp","after":[9727,9776],"only":true},
+"9855":{"classes":["seraph"],"max":true,"en":"Combo: Wrenching Impale","ru":"Комбо: Выкручивание","icon":"/assets/ui_texture/icon/new_icon/04_pc_skill/01_pc_skill/33_pdkl_skill/pdkl_skill_9855.webp","after":[9735,9783,9796],"only":true},
 "9860":{"classes":["agent"],"max":true,"en":"Evasion","ru":"Мобильное уклонение","icon":"/assets/ui_texture/icon/new_icon/04_pc_skill/01_pc_skill/34_pgms_skill/pgms_skill_9860.webp"},
 "9861":{"classes":["agent"],"en":"Firearms Mastery I","ru":"Профессиональный стрелок I","icon":"/assets/ui_texture/icon/new_icon/04_pc_skill/01_pc_skill/34_pgms_skill/pgms_skill_9861.webp"},
 "9862":{"classes":["agent"],"en":"Firearms Mastery II","ru":"Профессиональный стрелок II","icon":"/assets/ui_texture/icon/new_icon/04_pc_skill/01_pc_skill/34_pgms_skill/pgms_skill_9861.webp"},
